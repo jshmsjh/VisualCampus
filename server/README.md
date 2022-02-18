@@ -14,7 +14,6 @@
   - numpy
   - skimage
   - numba
-
   - </details>
   
 #### 使用
