@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>学生公寓5号楼</title>
+    
+    <style type="text/css">
+        html, body {
+            margin: 0;
+            height: 100%;
+        }
+        #label {
+            position: absolute;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.6);
+            line-height: 1;
+            border-radius: 5px;
+            }
+        canvas {
+            display: block;
+        }
+
+    </style>
+</head>
+<body onload="draw();">
+    <div id="label"></div>
+    <div id="container"></div>
+  <script src="./ThreeJs/js/three.js"></script>
+  <script src="./ThreeJs/js/stats.min.js"></script>
+  <script src="./ThreeJs/js/DragControls.js"></script>
+  <script src="./ThreeJs/js/OrbitControls.js"></script>
+  <script src="./ThreeJs/js/OBJLoader.js"></script>
+  <script src="./ThreeJs/js/MTLLoader.js"></script>
+  <script src="./ThreeJs/js/FirstPersonControls.js"></script>
+  <script src="./ThreeJs/js/TransformControls.js"></script>
+  <script src="./ThreeJs/js/dat.gui.min.js"></script>
+  <script src="./ThreeJs/js/EffectComposer.js"></script>
+  <script src="./ThreeJs/js/RenderPass.js"></script>
+  <script src="./ThreeJs/js/OutlinePass.js"></script>
+  <script src="./ThreeJs/js/FXAAShader.js"></script>
+  <script src="./ThreeJs/js/CopyShader.js"></script>
+  <script src="./ThreeJs/js/ShaderPass.js"></script>
+  <script src="./ThreeJs/js/ThreeBSP.js"></script>
+  <script src="./ThreeJs/ThreeJs_Drag.js" charset="UTF-8"></script>
+  <script src="./ThreeJs/ThreeJs_Composer.js" charset="UTF-8"></script>
+  <script src="./ThreeJs/Modules.js" charset="UTF-8"></script>
+  <script src="./ThreeJs/js/Tween.js"></script>
+  <script src="./ThreeJs/js/jquery-1.11.0.min.js"></script>
+  <script src="./echarts/echarts.min.js"></script>
+  <script src="./ThreeJs/config.js"></script>
+  <script src="./ThreeJs/ThreeJs_Composer.js"></script>
+
+<script>
+    var matArrayA = []; //内墙
+    var matArrayB = []; //外墙
+
+    var renderer;
+    function initRender() {
+        renderer = new THREE.WebGLRenderer({antialias:true});
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        //告诉渲染器需要阴影效果
+        renderer.setClearColor(0xffffff);
+        document.body.appendChild(renderer.domElement);
+    }
+
+    var camera;
+    function initCamera() {
+        camera = new THREE.PerspectiveCamera(15, window.innerWidth/window.innerHeight, 0.1, 2000);
+        camera.position.set(100, 200, 200);
+        camera.lookAt(new THREE.Vector3(0,0,0));
+    }
+
+    var scene;
+    function initScene() {
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xa0a0a0);
+        // scene.fog = new THREE.Fog(0xa0a0a0, 10, 22);
+    }
+
+    //初始化dat.GUI简化试验流程
+    var gui;
+    var obj = {
+        speed : 2
+    };
+    function initGui() {
+        //声明一个保存需求修改的相关数据的对象
+        gui = {
+        };
+        var datGui = new dat.GUI();
+        //将设置属性添加到gui当中，gui.add(对象，属性，最小值，最大值）
+    datGui.add(obj, 'speed',0,10);
+    }
+
+    var light;
+    function initLight() {
+        scene.add(new THREE.AmbientLight(0x444444));
+
+        light = new THREE.PointLight(0xffffff);
+        light.position.set(0,50,0);
+
+        //告诉平行光需要开启阴影投射
+        light.castShadow = true;
+
+        var directionalLight = new THREE.DirectionalLight(0xffffff, 0.3); //模拟远处类似太阳的光源
+        directionalLight.color.setHSL(0.1, 1, 0.95);
+        directionalLight.position.set(0, 200, 0).normalize();
+        scene.add(directionalLight);
+
+        scene.add(light);
+    }
+
+    var composer;
+    function initModel() {
+
+        //辅助工具
+        // var helper = new THREE.AxesHelper(50);
+        // scene.add(helper);
+
+        var mtlLoader = new THREE.MTLLoader();
+        mtlLoader.setPath('./static/models/dorm5/');
+        //加载mtl文件
+        mtlLoader.load('XW.mtl', function (material) {
+            var objLoader = new THREE.OBJLoader();
+            //设置当前加载的纹理
+            objLoader.setMaterials(material);
+            objLoader.setPath('./static/models/dorm5/');
+            objLoader.load('XW.obj', function (object) {
+
+                //将模型缩放并添加到场景当中
+                object.scale.set(1, 1, 1);
+                object.position.set(-1.5,-1.35,-0.24)
+                scene.add(object);
+            })
+        });
+    }
+
+    //初始化性能插件
+    var stats;
+    function initStats() {
+        stats = new Stats();
+        document.body.appendChild(stats.dom);
+    }
+
+    //用户交互插件 鼠标左键按住旋转，右键按住平移，滚轮缩放
+    var controls;
+    function initControls() {
+
+        controls = new THREE.OrbitControls( camera, renderer.domElement );
+
+        // 如果使用animate方法时，将此函数删除
+        //controls.addEventListener( 'change', render );
+        // 使动画循环使用时阻尼或自转 意思是否有惯性
+        controls.enableDamping = true;
+        //动态阻尼系数 就是鼠标拖拽旋转灵敏度
+        //controls.dampingFactor = 0.25;
+        //是否可以缩放
+        controls.enableZoom = true;
+        //是否自动旋转
+        controls.autoRotate = true;
+        // controls.autoRotateSpeed = 3.0;
+        //设置相机距离原点的最远距离
+        controls.minDistance  = 1;
+        //设置相机距离原点的最远距离
+        controls.maxDistance  = 2000;
+        //是否开启右键拖拽
+        controls.enablePan = true;
+    }
+
+    function render() {
+
+        renderer.render( scene, camera );
+    }
+
+    function createCubeWall(width, height, depth, angle, material, x, y, z, name) {
+      var cubeGeometry = new THREE.BoxGeometry(width, height, depth);
+      var cube = new THREE.Mesh(cubeGeometry, material);
+      cube.position.x = x;
+      cube.position.y = y;
+      cube.position.z = z;
+      cube.rotation.y += angle * Math.PI; //-逆时针旋转,+顺时针
+      cube.name = name;
+      scene.add(cube);
+    }
+    //窗口变动触发的函数
+    function onWindowResize() {
+
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        render();
+        renderer.setSize( window.innerWidth, window.innerHeight );
+
+    }
+
+    function animate() {
+        //更新控制器
+        render();
+
+        //更新性能插件
+        stats.update();
+
+        controls.autoRotateSpeed = obj.speed;
+        controls.update();
+        composer.render();
+        requestAnimationFrame(animate);
+    }
+
+    //创建墙纹理
+     function createWallMaterail(){
+         matArrayA.push(new THREE.MeshPhongMaterial({color: 0xafc0ca,transparent: true,opacity: 0}));  //前  
+         matArrayA.push(new THREE.MeshPhongMaterial({color: 0xafc0ca,transparent: true,opacity: 0}));  //后
+         matArrayA.push(new THREE.MeshPhongMaterial({color: 0xafc0ca,transparent: true,opacity: 0}));  //上 
+         matArrayA.push(new THREE.MeshPhongMaterial({color: 0xafc0ca,transparent: true,opacity: 0}));  //下
+         matArrayA.push(new THREE.MeshPhongMaterial({color: 0xafc0ca,transparent: true,opacity: 0}));  //左   
+         matArrayA.push(new THREE.MeshPhongMaterial({color: 0xafc0ca,transparent: true,opacity: 0}));  //右
+
+         matArrayB.push(new THREE.MeshPhongMaterial({color: 0xafc0ca,transparent: true,opacity: 0}));  //前 
+         matArrayB.push(new THREE.MeshPhongMaterial({color: 0xafc0ca,transparent: true,opacity: 0}));  //后  
+         matArrayB.push(new THREE.MeshPhongMaterial({color: 0xafc0ca,transparent: true,opacity: 0}));  //上  
+         matArrayB.push(new THREE.MeshPhongMaterial({color: 0xafc0ca,transparent: true,opacity: 0}));  //下
+         matArrayB.push(new THREE.MeshPhongMaterial({color: 0xafc0ca,transparent: true,opacity: 0}));  //左   
+         matArrayB.push(new THREE.MeshPhongMaterial({color: 0xafc0ca,transparent: true,opacity: 0}));  //右
+
+        //  matArrayA.push(new THREE.MeshPhongMaterial({color: 0xafc0ca, alphaMap: 'white'}));  //前  0xafc0ca :灰色
+        //  matArrayA.push(new THREE.MeshPhongMaterial({color: 0xafc0ca, alphaMap: 'white'}));  //后
+        //  matArrayA.push(new THREE.MeshPhongMaterial({color: 0xd6e4ec, alphaMap: 'white'}));  //上  0xd6e4ec： 偏白色
+        //  matArrayA.push(new THREE.MeshPhongMaterial({color: 0xd6e4ec, alphaMap: 'white'}));  //下
+        //  matArrayA.push(new THREE.MeshPhongMaterial({color: 0xafc0ca, alphaMap: 'white'}));  //左    0xafc0ca :灰色
+        //  matArrayA.push(new THREE.MeshPhongMaterial({color: 0xafc0ca, alphaMap: 'white'}));  //右
+
+        //  matArrayB.push(new THREE.MeshPhongMaterial({color: 0xafc0ca, alphaMap: 'white'}));  //前  0xafc0ca :灰色
+        //  matArrayB.push(new THREE.MeshPhongMaterial({color: 0x9cb2d1, alphaMap: 'white'}));  //后  0x9cb2d1：淡紫
+        //  matArrayB.push(new THREE.MeshPhongMaterial({color: 0xd6e4ec, alphaMap: 'white'}));  //上  0xd6e4ec： 偏白色
+        //  matArrayB.push(new THREE.MeshPhongMaterial({color: 0xd6e4ec, alphaMap: 'white'}));  //下
+        //  matArrayB.push(new THREE.MeshPhongMaterial({color: 0xafc0ca, alphaMap: 'white'}));  //左   0xafc0ca :灰色
+        //  matArrayB.push(new THREE.MeshPhongMaterial({color: 0xafc0ca, alphaMap: 'white'}));  //右
+     }
+    function initContent() {
+        // createFloor();
+            createWallMaterail();
+            // width, height, depth, angle, material, x, y, z, name
+            //学五正常窗户规格：3.2Mx1.9M
+
+            //第一组面
+            //正面
+            createCubeWall(15.8, 1.8, 0.36, 0.038, matArrayB, -14.15, 6.2, 10.05,  "窗户尺寸3.2Mx1.9M");
+            createCubeWall(15.8, 1.8, 0.36, 0.038, matArrayB, -14.15, 2.85, 10.05,  "窗户尺寸3.2Mx1.9M");
+            createCubeWall(15.8, 1.8, 0.36, 0.038, matArrayB, -14.15, -0.53, 10.05,  "窗户尺寸3.2Mx1.9M");
+            createCubeWall(15.8, 1.8, 0.36, 0.038, matArrayB, -14.15, -3.95, 10.05,  "窗户尺寸3.2Mx1.9M");
+            createCubeWall(15.8, 1.8, 0.36, 0.038, matArrayB, -14.15, -7.47, 10.05,  "窗户尺寸3.2Mx1.9M");
+            createCubeWall(15.8, 1.8, 0.36, 0.038, matArrayB, -14.15, -11.25, 10.05,  "窗户尺寸3.2Mx1.9M");
+            //反面
+            createCubeWall(15.2, 1.8, 0.33, 0.0375, matArrayB, -16.45, 6.2, -5.82,  "窗户尺寸3.2Mx1.9M");
+            createCubeWall(1.4, 1.2, 0.35, 0.038, matArrayB, -7.25, 6, -6.9,  "窗户尺寸3.2Mx1.9M");
+
+            createCubeWall(15.2, 1.8, 0.33, 0.0375, matArrayB, -16.45, 2.8, -5.82,  "窗户尺寸3.2Mx1.9M");
+            createCubeWall(1.4, 1.2, 0.35, 0.038, matArrayB, -7.25, 2.73, -6.9,  "窗户尺寸3.2Mx1.9M");
+
+            createCubeWall(15.2, 1.8, 0.33, 0.0375, matArrayB, -16.45, -0.65, -5.82,  "窗户尺寸3.2Mx1.9M");
+            createCubeWall(1.4, 1.2, 0.35, 0.038, matArrayB, -7.25, -0.74, -6.9,  "窗户尺寸3.2Mx1.9M");
+
+            createCubeWall(15.2, 1.8, 0.33, 0.0375, matArrayB, -16.45, -4.12, -5.82,  "窗户尺寸3.2Mx1.9M");
+            createCubeWall(1.4, 1.2, 0.35, 0.038, matArrayB, -7.25, -4.33, -6.9,  "窗户尺寸3.2Mx1.9M");
+
+            createCubeWall(15.2, 1.8, 0.33, 0.0375, matArrayB, -16.45, -7.5, -5.82,  "窗户尺寸3.2Mx1.9M");
+            createCubeWall(1.4, 1.2, 0.35, 0.038, matArrayB, -7.25, -7.7, -6.9,  "窗户尺寸3.2Mx1.9M");
+
+            createCubeWall(15.2, 1.8, 0.33, 0.0375, matArrayB, -16.45, -11.4, -5.82,  "窗户尺寸3.2Mx1.9M");
+            createCubeWall(1.4, 1.2, 0.35, 0.038, matArrayB, -7.25, -11.6, -6.9,  "窗户尺寸3.2Mx1.9M");
+
+            //第二组面
+            //正面
+            createCubeWall(17.9, 1.8, 0.45, 0.359, matArrayB, 1.32, 6.1, -19.75,  "窗户尺寸3.2Mx1.9M");
+            createCubeWall(1.4, 1.2, 0.35, 0.36, matArrayB, -3.5, 6, -9.9,  "窗户尺寸3.2Mx1.9M");
+
+            createCubeWall(17.9, 1.8, 0.45, 0.359, matArrayB, 1.32, 2.67, -19.75,  "窗户尺寸3.2Mx1.9M");
+            createCubeWall(1.4, 1.2, 0.35, 0.36, matArrayB, -3.5, 2.56, -9.9,  "窗户尺寸3.2Mx1.9M");
+
+            createCubeWall(17.9, 1.8, 0.45, 0.359, matArrayB, 1.32, -0.72, -19.75,  "窗户尺寸3.2Mx1.9M");
+            createCubeWall(1.4, 1.2, 0.35, 0.36, matArrayB, -3.5, -0.76, -9.9,  "窗户尺寸3.2Mx1.9M");
+
+            createCubeWall(17.9, 1.8, 0.45, 0.359, matArrayB, 1.32, -4.1, -19.75,  "窗户尺寸3.2Mx1.9M");
+            createCubeWall(1.4, 1.2, 0.35, 0.36, matArrayB, -3.5, -4.26, -9.9,  "窗户尺寸3.2Mx1.9M");
+
+            createCubeWall(17.9, 1.8, 0.45, 0.359, matArrayB, 1.32, -7.52, -19.75,  "窗户尺寸3.2Mx1.9M");
+            createCubeWall(1.4, 1.2, 0.35, 0.36, matArrayB, -3.5, -7.71, -9.9,  "窗户尺寸3.2Mx1.9M");
+
+            createCubeWall(17.9, 1.8, 0.45, 0.359, matArrayB, 1.32, -11.35, -19.75,  "窗户尺寸3.2Mx1.9M");
+            createCubeWall(1.4, 1.2, 0.35, 0.36, matArrayB, -3.5, -11.67, -9.9,  "窗户尺寸3.2Mx1.9M");
+            //反面
+            createCubeWall(21.3, 1.8, 0.26, 0.371, matArrayB, 15.55, 6.3, -12.2,  "窗户尺寸3.2Mx1.9M");
+            createCubeWall(21.3, 1.8, 0.26, 0.371, matArrayB, 15.55, 2.89, -12.2,  "窗户尺寸3.2Mx1.9M");
+            createCubeWall(21.3, 1.8, 0.26, 0.371, matArrayB, 15.55, -0.5, -12.2,  "窗户尺寸3.2Mx1.9M");
+            createCubeWall(21.3, 1.8, 0.26, 0.371, matArrayB, 15.55, -3.9, -12.2,  "窗户尺寸3.2Mx1.9M");
+            createCubeWall(21.3, 1.8, 0.26, 0.371, matArrayB, 15.55, -7.3, -12.2,  "窗户尺寸3.2Mx1.9M");
+            createCubeWall(21.3, 1.8, 0.26, 0.371, matArrayB, 15.55, -11.4, -12.2,  "窗户尺寸3.2Mx1.9M");
+
+            //第三组面的参考旋转角度
+            //正面
+            createCubeWall(20.9, 1.8, 0.13, 0.698, matArrayB, 4.8, 6.2, 19.15,  "窗户尺寸3.2Mx1.9M");
+            createCubeWall(20.9, 1.8, 0.13, 0.698, matArrayB, 4.8, 2.78, 19.15,  "窗户尺寸3.2Mx1.9M");
+            createCubeWall(20.9, 1.8, 0.13, 0.698, matArrayB, 4.8, -0.6, 19.15,  "窗户尺寸3.2Mx1.9M");
+            createCubeWall(20.9, 1.8, 0.13, 0.698, matArrayB, 4.8, -4, 19.15,  "窗户尺寸3.2Mx1.9M");
+            createCubeWall(20.9, 1.8, 0.13, 0.698, matArrayB, 4.8, -7.4, 19.15,  "窗户尺寸3.2Mx1.9M");
+            createCubeWall(20.9, 1.8, 0.13, 0.698, matArrayB, 4.8, -11.34, 19.15,  "窗户尺寸3.2Mx1.9M");
+            //反面
+            createCubeWall(19.3, 1.8, 0.1, 0.703, matArrayB, 17.95, 6.3, 9,  "窗户尺寸3.2Mx1.9M");
+            createCubeWall(19.3, 1.8, 0.1, 0.703, matArrayB, 17.95, 2.85, 9,  "窗户尺寸3.2Mx1.9M");
+            createCubeWall(19.3, 1.8, 0.1, 0.703, matArrayB, 17.95, -0.57, 9,  "窗户尺寸3.2Mx1.9M");
+            createCubeWall(19.3, 1.8, 0.1, 0.703, matArrayB, 17.95, -4.06, 9,  "窗户尺寸3.2Mx1.9M");
+            createCubeWall(19.3, 1.8, 0.1, 0.703, matArrayB, 17.95, -7.38, 9,  "窗户尺寸3.2Mx1.9M");
+            createCubeWall(19.3, 1.8, 0.1, 0.703, matArrayB, 17.95, -11.37, 9,  "窗户尺寸3.2Mx1.9M");
+            //
+            //
+    }
+    
+    function draw() {
+        initGui();
+        initRender();
+        initScene();
+        initCamera();
+        initLight();
+        initModel();
+        initControls();
+        initStats();
+        initContent();
+
+        //添加选中时的蒙版
+        composer = new THREE.ThreeJs_Composer(renderer, scene, camera);
+        animate();
+        window.onresize = onWindowResize;
+    }
+</script>
+</body>
+</html>

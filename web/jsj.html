@@ -1,0 +1,976 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<link rel="stylesheet" href="static/css/reset.css"> <!-- CSS reset -->
+	<link rel="stylesheet" href="static/css/style2.css"> <!-- Resource style -->
+	<script src="static/js2/modernizr.js"></script> <!-- Modernizr -->
+	<style type="text/css">
+	.pointer{
+
+       cursor: pointer;
+
+      }
+
+	</style>
+  	
+	<title>Computer Vision</title>
+</head>
+<body>
+	<header>
+		<a id="cd-logo" href="index.html"><img src="static/image/logo.png" alt="Homepage"></a>
+		<nav id="scd-top-nav">
+			<ul>
+				<li><a href="index.html">VisualCampus</a></li>
+			</ul>
+		</nav>
+
+		
+		<nav id="cd-top-nav">
+			<ul>
+				<li><a class='pointer'  onclick='saveimage()'>上传图片</a></li>
+
+				<li>
+				<input type="file" name="file" id="doc" style="width:90px;" onchange="javascript:setImagePreview();">
+			    </li>
+			</ul>
+		</nav>
+		<a id="cd-menu-trigger" href="#0"><span class="cd-menu-text">目录</span><span class="cd-menu-icon"></span></a>
+	</header>
+	
+	
+	<main class="cd-main-content">
+
+
+
+		<div id="wrap">
+			<div id="localImag" >
+				<img id="preview"  width="400" height="600" style="display: block; width: 620px; height: 400px;">
+				<p >&nbsp;</p>
+				<h1 align = "center">原始图片</h1>
+			
+			
+			</div>
+			<div id="localImag2" >
+				<img id="preview2"  width="400" height="600" style="display: block; width: 620px; height: 400px;">
+				<p >&nbsp;</p>
+				<h1 align = "center">效果图片</h1>
+			</div>
+		</div>
+
+
+
+
+
+
+		<!-- put your content here -->
+
+	</main> <!-- cd-main-content -->
+
+	<nav id="cd-lateral-nav">
+		<ul class="cd-navigation">
+			<li class="item-has-children">
+				<a href="#0">常用</a>
+				<ul class="sub-menu">
+					<li><a class='pointer'  onclick='brighter()'>变亮</a></li>
+					<li><a class='pointer'  onclick='dimmer()'>变暗</a></li>
+					<li><a class='pointer'  onclick='smooth()'>平滑</a></li>
+					<li><a class='pointer'  onclick='toGray()'>灰度变化</a></li>
+					<li><a class='pointer'  onclick='toBinary()'>二值化</a></li>
+
+				</ul>
+			</li> <!-- item-has-children -->
+
+			<li class="item-has-children">
+				<a href="#0">边缘检测</a>
+				<ul class="sub-menu">
+					<li><a class='pointer'  onclick='sobel()'>Sobel</a></li>
+					<li><a class='pointer'  onclick='laplacian()'>Laplacian</a></li>
+					<li><a class='pointer'  onclick='canny()'>Canny</a></li>
+					<li><a class='pointer'  onclick='contour()'>轮廓获取</a></li>
+				</ul>
+			</li> <!-- item-has-children -->
+
+			<li class="item-has-children">
+				<a href="#0">滤波</a>
+				<ul class="sub-menu">
+					<li><a class='pointer'  onclick='blur()'>均值滤波</a></li>
+					<li><a class='pointer'  onclick='medianBlur()'>中值滤波</a></li>
+					<li><a class='pointer'  onclick='gaussianBlur()'>高斯滤波</a></li>
+					<li><a class='pointer'  onclick='maskBlur()'>掩模滤波器</a></li>
+				</ul>
+			</li> <!-- item-has-children -->
+
+			<li class="item-has-children">
+				<a href="#0">形态学处理</a>
+				<ul class="sub-menu">
+					<li><a class='pointer'  onclick='erode()'>腐蚀</a></li>
+					<li><a class='pointer'  onclick='dilate()'>膨胀</a></li>
+					<li><a class='pointer'  onclick='opening()'>开运算</a></li>
+					<li><a class='pointer'  onclick='closing()'>闭运算</a></li>
+				</ul>
+			</li> <!-- item-has-children -->
+
+			<li class="item-has-children">
+				<a href="#0">均衡化/图像增强</a>
+				<ul class="sub-menu">
+					<li><a class='pointer'  onclick='equalizeHist()'>直方图均值</a></li>
+					<li><a class='pointer'  onclick='edgeRein()'>边缘增强</a></li>
+					<li><a class='pointer'  onclick='USM()'>USM增强锐化</a></li>
+				</ul>
+			</li> <!-- item-has-children -->
+
+			<li class="item-has-children">
+				<a href="#0">阈值处理</a>
+				<ul class="sub-menu">
+					<li><a class='pointer'  onclick='otsu()'>otsu</a></li>
+					<li><a class='pointer'  onclick='MA()'>移动平均</a></li>
+					<li><a class='pointer'  onclick='adaThresh()'>自适应阈值</a></li>
+					<li><a class='pointer'  onclick='sauvola()'>Sauvola</a></li>
+				</ul>
+			</li> <!-- item-has-children -->
+
+		</ul> <!-- cd-navigation -->
+		
+	</nav>
+	
+<script src="js/jquery-1.11.1.min.js"></script>
+<script src="js/main.js"></script> <!-- Resource jQuery -->
+
+<script type="text/javascript">
+	//下面用于图片上传预览功能
+	function setImagePreview(avalue) {
+	var docObj=document.getElementById("doc");
+	 
+	var imgObjPreview=document.getElementById("preview");
+
+	if(docObj.files &&docObj.files[0])
+	{
+	//火狐下，直接设img属性
+	imgObjPreview.style.display = 'block';
+	imgObjPreview.style.width = '620px';
+	imgObjPreview.style.height = '400px'; 
+
+	//imgObjPreview.src = docObj.files[0].getAsDataURL();
+	 
+	//火狐7以上版本不能用上面的getAsDataURL()方式获取，需要一下方式
+	imgObjPreview.src = window.URL.createObjectURL(docObj.files[0]);
+
+	}
+	else
+	{
+	//IE下，使用滤镜
+	docObj.select();
+	var imgSrc = document.selection.createRange().text;
+	var localImagId = document.getElementById("localImag");
+
+	//必须设置初始大小
+	localImagId.style.width = "620px";
+	localImagId.style.height = "400px";
+
+	//图片异常的捕捉，防止用户修改后缀来伪造图片
+	try{
+	localImagId.style.filter="progid:DXImageTransform.Microsoft.AlphaImageLoader(sizingMethod=scale)";
+	localImagId.filters.item("DXImageTransform.Microsoft.AlphaImageLoader").src = imgSrc;
+
+
+	}
+	catch(e)
+	{
+	alert("您选择的图片格式不正确，请重新选择!");
+	return false;
+	}
+	imgObjPreview.style.display = 'none';
+	document.selection.empty();
+	}
+	return true;
+	}
+</script>
+<script  >
+
+	function saveimage() {
+		var formData = new FormData();
+		formData.append('uploadFile', $('#doc')[0].files[0]);
+
+		//ajax请求
+		$.ajax({
+					type: "post",
+					url:  "http://116.62.132.196:5000/up_photo",
+					data: formData,
+					crossDomain: true,  
+
+					processData: false, // 告诉jQuery不要去处理发送的数据
+					contentType: false, // 告诉jQuery不要去设置Content-Type请求头
+					success: function (data) {
+						console.log(data);
+						$("#preview2").attr("src",data);
+
+						alert('上传成功')
+					},
+					error: function (data) {
+						alert('上传失败')
+
+						layer.msg('请求异常');
+					},
+				});
+	}
+
+	function blur_l() {
+
+		var info = {"order": 'blur_l'};
+		
+
+		//ajax请求
+		$.ajax({
+			type: "post",
+			url:  "http://116.62.132.196:5000/receiveOrder",
+			data: JSON.stringify(info),//将数据转化为json格式
+			dataType: 'json',//接收后台数据的格式
+			contentType: "application/json;charset=utf-8",//发送给后台数据的格式
+			success: function (data) {
+				console.log(data);
+				$("#preview2").attr("src",data['responseText']);
+
+
+			},
+			error: function (data) {
+				$("#preview2").attr("src",data['responseText']);
+
+				console.log(data['responseText'])
+
+
+			
+			},
+		});
+}
+	function brighter() {
+
+var info = {"order": 'brighter'};
+
+
+//ajax请求
+$.ajax({
+			type: "post",
+			url:  "http://116.62.132.196:5000/receiveOrder",
+			data: JSON.stringify(info),//将数据转化为json格式
+			dataType: 'json',//接收后台数据的格式
+			contentType: "application/json;charset=utf-8",//发送给后台数据的格式
+			success: function (data) {
+				console.log(data);
+				$("#preview2").attr("src",data['responseText']);
+
+
+			},
+			error: function (data) {
+				$("#preview2").attr("src",data['responseText']);
+
+				console.log(data['responseText'])
+
+
+			
+			},
+		});
+}
+
+	
+function dimmer() {
+
+var info = {"order": 'dimmer'};
+
+
+//ajax请求
+$.ajax({
+			type: "post",
+			url:  "http://116.62.132.196:5000/receiveOrder",
+			data: JSON.stringify(info),//将数据转化为json格式
+			dataType: 'json',//接收后台数据的格式
+			contentType: "application/json;charset=utf-8",//发送给后台数据的格式
+			success: function (data) {
+				console.log(data);
+				$("#preview2").attr("src",data['responseText']);
+
+
+			},
+			error: function (data) {
+				$("#preview2").attr("src",data['responseText']);
+
+				console.log(data['responseText'])
+
+
+			
+			},
+		});
+}
+
+function smooth() {
+
+var info = {"order": 'smooth'};
+
+
+//ajax请求
+$.ajax({
+			type: "post",
+			url:  "http://116.62.132.196:5000/receiveOrder",
+			data: JSON.stringify(info),//将数据转化为json格式
+			dataType: 'json',//接收后台数据的格式
+			contentType: "application/json;charset=utf-8",//发送给后台数据的格式
+			success: function (data) {
+				console.log(data);
+				$("#preview2").attr("src",data['responseText']);
+
+
+			},
+			error: function (data) {
+				$("#preview2").attr("src",data['responseText']);
+
+				console.log(data['responseText'])
+
+
+			
+			},
+		});
+}
+
+
+
+function toGray() {
+
+var info = {"order": 'toGray'};
+
+
+//ajax请求
+$.ajax({
+			type: "post",
+			url:  "http://116.62.132.196:5000/receiveOrder",
+			data: JSON.stringify(info),//将数据转化为json格式
+			dataType: 'json',//接收后台数据的格式
+			contentType: "application/json;charset=utf-8",//发送给后台数据的格式
+			success: function (data) {
+				console.log(data);
+				$("#preview2").attr("src",data['responseText']);
+
+
+			},
+			error: function (data) {
+				$("#preview2").attr("src",data['responseText']);
+
+				console.log(data['responseText'])
+
+
+			
+			},
+		});
+}
+
+function toBinary() {
+
+var info = {"order": 'toBinary'};
+
+
+//ajax请求
+$.ajax({
+			type: "post",
+			url:  "http://116.62.132.196:5000/receiveOrder",
+			data: JSON.stringify(info),//将数据转化为json格式
+			dataType: 'json',//接收后台数据的格式
+			contentType: "application/json;charset=utf-8",//发送给后台数据的格式
+			success: function (data) {
+				console.log(data);
+				$("#preview2").attr("src",data['responseText']);
+
+
+			},
+			error: function (data) {
+				$("#preview2").attr("src",data['responseText']);
+
+				console.log(data['responseText'])
+
+
+			
+			},
+		});
+}
+
+function sobel() {
+
+var info = {"order": 'sobel'};
+
+
+//ajax请求
+$.ajax({
+			type: "post",
+			url:  "http://116.62.132.196:5000/receiveOrder",
+			data: JSON.stringify(info),//将数据转化为json格式
+			dataType: 'json',//接收后台数据的格式
+			contentType: "application/json;charset=utf-8",//发送给后台数据的格式
+			success: function (data) {
+				console.log(data);
+				$("#preview2").attr("src",data['responseText']);
+
+
+			},
+			error: function (data) {
+				$("#preview2").attr("src",data['responseText']);
+
+				console.log(data['responseText'])
+
+
+			
+			},
+		});
+}
+
+function laplacian() {
+
+var info = {"order": 'laplacian'};
+
+
+//ajax请求
+$.ajax({
+			type: "post",
+			url:  "http://116.62.132.196:5000/receiveOrder",
+			data: JSON.stringify(info),//将数据转化为json格式
+			dataType: 'json',//接收后台数据的格式
+			contentType: "application/json;charset=utf-8",//发送给后台数据的格式
+			success: function (data) {
+				console.log(data);
+				$("#preview2").attr("src",data['responseText']);
+
+
+			},
+			error: function (data) {
+				$("#preview2").attr("src",data['responseText']);
+
+				console.log(data['responseText'])
+
+
+			
+			},
+		});
+}
+
+function canny() {
+
+var info = {"order": 'canny'};
+
+
+//ajax请求
+$.ajax({
+			type: "post",
+			url:  "http://116.62.132.196:5000/receiveOrder",
+			data: JSON.stringify(info),//将数据转化为json格式
+			dataType: 'json',//接收后台数据的格式
+			contentType: "application/json;charset=utf-8",//发送给后台数据的格式
+			success: function (data) {
+				console.log(data);
+				$("#preview2").attr("src",data['responseText']);
+
+
+			},
+			error: function (data) {
+				$("#preview2").attr("src",data['responseText']);
+
+				console.log(data['responseText'])
+
+
+			
+			},
+		});
+}
+
+function contour() {
+
+var info = {"order": 'contour'};
+
+
+//ajax请求
+$.ajax({
+			type: "post",
+			url:  "http://116.62.132.196:5000/receiveOrder",
+			data: JSON.stringify(info),//将数据转化为json格式
+			dataType: 'json',//接收后台数据的格式
+			contentType: "application/json;charset=utf-8",//发送给后台数据的格式
+			success: function (data) {
+				console.log(data);
+				$("#preview2").attr("src",data['responseText']);
+
+
+			},
+			error: function (data) {
+				$("#preview2").attr("src",data['responseText']);
+
+				console.log(data['responseText'])
+
+
+			
+			},
+		});
+}
+function blur() {
+
+var info = {"order": 'blur'};
+
+
+//ajax请求
+$.ajax({
+			type: "post",
+			url:  "http://116.62.132.196:5000/receiveOrder",
+			data: JSON.stringify(info),//将数据转化为json格式
+			dataType: 'json',//接收后台数据的格式
+			contentType: "application/json;charset=utf-8",//发送给后台数据的格式
+			success: function (data) {
+				console.log(data);
+				$("#preview2").attr("src",data['responseText']);
+
+
+			},
+			error: function (data) {
+				$("#preview2").attr("src",data['responseText']);
+
+				console.log(data['responseText'])
+
+
+			
+			},
+		});
+}
+function medianBlur() {
+
+var info = {"order": 'medianBlur'};
+
+
+//ajax请求
+$.ajax({
+			type: "post",
+			url:  "http://116.62.132.196:5000/receiveOrder",
+			data: JSON.stringify(info),//将数据转化为json格式
+			dataType: 'json',//接收后台数据的格式
+			contentType: "application/json;charset=utf-8",//发送给后台数据的格式
+			success: function (data) {
+				console.log(data);
+				$("#preview2").attr("src",data['responseText']);
+
+
+			},
+			error: function (data) {
+				$("#preview2").attr("src",data['responseText']);
+
+				console.log(data['responseText'])
+
+
+			
+			},
+		});
+}
+
+function gaussianBlur() {
+
+var info = {"order": 'gaussianBlur'};
+
+
+//ajax请求
+$.ajax({
+			type: "post",
+			url:  "http://116.62.132.196:5000/receiveOrder",
+			data: JSON.stringify(info),//将数据转化为json格式
+			dataType: 'json',//接收后台数据的格式
+			contentType: "application/json;charset=utf-8",//发送给后台数据的格式
+			success: function (data) {
+				console.log(data);
+				$("#preview2").attr("src",data['responseText']);
+
+
+			},
+			error: function (data) {
+				$("#preview2").attr("src",data['responseText']);
+
+				console.log(data['responseText'])
+
+
+			
+			},
+		});
+}
+
+function maskBlur() {
+
+var info = {"order": 'maskBlur'};
+
+
+//ajax请求
+$.ajax({
+			type: "post",
+			url:  "http://116.62.132.196:5000/receiveOrder",
+			data: JSON.stringify(info),//将数据转化为json格式
+			dataType: 'json',//接收后台数据的格式
+			contentType: "application/json;charset=utf-8",//发送给后台数据的格式
+			success: function (data) {
+				console.log(data);
+				$("#preview2").attr("src",data['responseText']);
+
+
+			},
+			error: function (data) {
+				$("#preview2").attr("src",data['responseText']);
+
+				console.log(data['responseText'])
+
+
+			
+			},
+		});
+}
+
+function erode() {
+
+var info = {"order": 'erode'};
+
+
+//ajax请求
+$.ajax({
+			type: "post",
+			url:  "http://116.62.132.196:5000/receiveOrder",
+			data: JSON.stringify(info),//将数据转化为json格式
+			dataType: 'json',//接收后台数据的格式
+			contentType: "application/json;charset=utf-8",//发送给后台数据的格式
+			success: function (data) {
+				console.log(data);
+				$("#preview2").attr("src",data['responseText']);
+
+
+			},
+			error: function (data) {
+				$("#preview2").attr("src",data['responseText']);
+
+				console.log(data['responseText'])
+
+
+			
+			},
+		});
+}
+
+function dilate() {
+
+var info = {"order": 'dilate'};
+
+
+//ajax请求
+$.ajax({
+			type: "post",
+			url:  "http://116.62.132.196:5000/receiveOrder",
+			data: JSON.stringify(info),//将数据转化为json格式
+			dataType: 'json',//接收后台数据的格式
+			contentType: "application/json;charset=utf-8",//发送给后台数据的格式
+			success: function (data) {
+				console.log(data);
+				$("#preview2").attr("src",data['responseText']);
+
+
+			},
+			error: function (data) {
+				$("#preview2").attr("src",data['responseText']);
+
+				console.log(data['responseText'])
+
+
+			
+			},
+		});
+}
+function opening() {
+
+var info = {"order": 'opening'};
+
+
+//ajax请求
+$.ajax({
+			type: "post",
+			url:  "http://116.62.132.196:5000/receiveOrder",
+			data: JSON.stringify(info),//将数据转化为json格式
+			dataType: 'json',//接收后台数据的格式
+			contentType: "application/json;charset=utf-8",//发送给后台数据的格式
+			success: function (data) {
+				console.log(data);
+				$("#preview2").attr("src",data['responseText']);
+
+
+			},
+			error: function (data) {
+				$("#preview2").attr("src",data['responseText']);
+
+				console.log(data['responseText'])
+
+
+			
+			},
+		});
+}
+
+function closing() {
+
+var info = {"order": 'closing'};
+
+
+//ajax请求
+$.ajax({
+			type: "post",
+			url:  "http://116.62.132.196:5000/receiveOrder",
+			data: JSON.stringify(info),//将数据转化为json格式
+			dataType: 'json',//接收后台数据的格式
+			contentType: "application/json;charset=utf-8",//发送给后台数据的格式
+			success: function (data) {
+				console.log(data);
+				$("#preview2").attr("src",data['responseText']);
+
+
+			},
+			error: function (data) {
+				$("#preview2").attr("src",data['responseText']);
+
+				console.log(data['responseText'])
+
+
+			
+			},
+		});
+}
+
+function equalizeHist() {
+
+var info = {"order": 'equalizeHist'};
+
+
+//ajax请求
+$.ajax({
+			type: "post",
+			url:  "http://116.62.132.196:5000/receiveOrder",
+			data: JSON.stringify(info),//将数据转化为json格式
+			dataType: 'json',//接收后台数据的格式
+			contentType: "application/json;charset=utf-8",//发送给后台数据的格式
+			success: function (data) {
+				console.log(data);
+				$("#preview2").attr("src",data['responseText']);
+
+
+			},
+			error: function (data) {
+				$("#preview2").attr("src",data['responseText']);
+
+				console.log(data['responseText'])
+
+
+			
+			},
+		});
+}
+
+function CLAHE() {
+
+var info = {"order": 'CLAHE'};
+
+
+//ajax请求
+$.ajax({
+			type: "post",
+			url:  "http://116.62.132.196:5000/receiveOrder",
+			data: JSON.stringify(info),//将数据转化为json格式
+			dataType: 'json',//接收后台数据的格式
+			contentType: "application/json;charset=utf-8",//发送给后台数据的格式
+			success: function (data) {
+				console.log(data);
+				$("#preview2").attr("src",data['responseText']);
+
+
+			},
+			error: function (data) {
+				$("#preview2").attr("src",data['responseText']);
+
+				console.log(data['responseText'])
+
+
+			
+			},
+		});
+}
+
+function edgeRein() {
+
+var info = {"order": 'edgeRein'};
+
+
+//ajax请求
+$.ajax({
+			type: "post",
+			url:  "http://116.62.132.196:5000/receiveOrder",
+			data: JSON.stringify(info),//将数据转化为json格式
+			dataType: 'json',//接收后台数据的格式
+			contentType: "application/json;charset=utf-8",//发送给后台数据的格式
+			success: function (data) {
+				console.log(data);
+				$("#preview2").attr("src",data['responseText']);
+
+
+			},
+			error: function (data) {
+				$("#preview2").attr("src",data['responseText']);
+
+				console.log(data['responseText'])
+
+
+			
+			},
+		});
+}
+
+function USM() {
+
+var info = {"order": 'USM'};
+
+
+//ajax请求
+$.ajax({
+			type: "post",
+			url:  "http://116.62.132.196:5000/receiveOrder",
+			data: JSON.stringify(info),//将数据转化为json格式
+			dataType: 'json',//接收后台数据的格式
+			contentType: "application/json;charset=utf-8",//发送给后台数据的格式
+			success: function (data) {
+				console.log(data);
+				$("#preview2").attr("src",data['responseText']);
+
+
+			},
+			error: function (data) {
+				$("#preview2").attr("src",data['responseText']);
+
+				console.log(data['responseText'])
+
+
+			
+			},
+		});
+}
+
+function otsu() {
+
+var info = {"order": 'otsu'};
+
+
+//ajax请求
+$.ajax({
+			type: "post",
+			url:  "http://116.62.132.196:5000/receiveOrder",
+			data: JSON.stringify(info),//将数据转化为json格式
+			dataType: 'json',//接收后台数据的格式
+			contentType: "application/json;charset=utf-8",//发送给后台数据的格式
+			success: function (data) {
+				console.log(data);
+				$("#preview2").attr("src",data['responseText']);
+
+
+			},
+			error: function (data) {
+				$("#preview2").attr("src",data['responseText']);
+
+				console.log(data['responseText'])
+
+
+			
+			},
+		});
+}
+
+function MA() {
+
+var info = {"order": 'MA'};
+
+
+//ajax请求
+$.ajax({
+			type: "post",
+			url:  "http://116.62.132.196:5000/receiveOrder",
+			data: JSON.stringify(info),//将数据转化为json格式
+			dataType: 'json',//接收后台数据的格式
+			contentType: "application/json;charset=utf-8",//发送给后台数据的格式
+			success: function (data) {
+				console.log(data);
+				$("#preview2").attr("src",data['responseText']);
+
+
+			},
+			error: function (data) {
+				$("#preview2").attr("src",data['responseText']);
+
+				console.log(data['responseText'])
+
+
+			
+			},
+		});
+}
+
+function adaThresh() {
+
+var info = {"order": 'adaThresh'};
+
+
+//ajax请求
+$.ajax({
+			type: "post",
+			url:  "http://116.62.132.196:5000/receiveOrder",
+			data: JSON.stringify(info),//将数据转化为json格式
+			dataType: 'json',//接收后台数据的格式
+			contentType: "application/json;charset=utf-8",//发送给后台数据的格式
+			success: function (data) {
+				console.log(data);
+				$("#preview2").attr("src",data['responseText']);
+
+
+			},
+			error: function (data) {
+				$("#preview2").attr("src",data['responseText']);
+
+				console.log(data['responseText'])
+
+
+			
+			},
+		});
+}
+
+function sauvola() {
+
+var info = {"order": 'sauvola'};
+
+
+//ajax请求
+$.ajax({
+			type: "post",
+			url:  "http://116.62.132.196:5000/receiveOrder",
+			data: JSON.stringify(info),//将数据转化为json格式
+			dataType: 'json',//接收后台数据的格式
+			contentType: "application/json;charset=utf-8",//发送给后台数据的格式
+			success: function (data) {
+				console.log(data);
+				$("#preview2").attr("src",data['responseText']);
+
+
+			},
+			error: function (data) {
+				$("#preview2").attr("src",data['responseText']);
+
+				console.log(data['responseText'])
+
+
+			
+			},
+		});
+}
+
+	</script>
+
+</body>
+</html>

@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>网络楼</title>
+    
+    <style type="text/css">
+        html, body {
+            margin: 0;
+            height: 100%;
+        }
+        #label {
+            position: absolute;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.6);
+            line-height: 1;
+            border-radius: 5px;
+            }
+        canvas {
+            display: block;
+        }
+
+    </style>
+</head>
+<body onload="draw();">
+    <div id="label"></div>
+    <div id="container"></div>
+  <script src="./ThreeJs/js/three.js"></script>
+  <script src="./ThreeJs/js/stats.min.js"></script>
+  <script src="./ThreeJs/js/DragControls.js"></script>
+  <script src="./ThreeJs/js/OrbitControls.js"></script>
+  <script src="./ThreeJs/js/OBJLoader.js"></script>
+  <script src="./ThreeJs/js/MTLLoader.js"></script>
+  <script src="./ThreeJs/js/FirstPersonControls.js"></script>
+  <script src="./ThreeJs/js/TransformControls.js"></script>
+  <script src="./ThreeJs/js/dat.gui.min.js"></script>
+  <script src="./ThreeJs/js/EffectComposer.js"></script>
+  <script src="./ThreeJs/js/RenderPass.js"></script>
+  <script src="./ThreeJs/js/OutlinePass.js"></script>
+  <script src="./ThreeJs/js/FXAAShader.js"></script>
+  <script src="./ThreeJs/js/CopyShader.js"></script>
+  <script src="./ThreeJs/js/ShaderPass.js"></script>
+  <script src="./ThreeJs/js/ThreeBSP.js"></script>
+  <script src="./ThreeJs/ThreeJs_Drag.js" charset="UTF-8"></script>
+  <script src="./ThreeJs/ThreeJs_Composer.js" charset="UTF-8"></script>
+  <script src="./ThreeJs/Modules.js" charset="UTF-8"></script>
+  <script src="./ThreeJs/js/Tween.js"></script>
+  <script src="./ThreeJs/js/jquery-1.11.0.min.js"></script>
+  <script src="./echarts/echarts.min.js"></script>
+  <script src="./ThreeJs/config.js"></script>
+  <script src="./ThreeJs/ThreeJs_Composer.js"></script>
+
+<script>
+    var matArrayA = []; //内墙
+    var matArrayB = []; //外墙
+
+    var renderer;
+    function initRender() {
+        renderer = new THREE.WebGLRenderer({antialias:true});
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        //告诉渲染器需要阴影效果
+        renderer.setClearColor(0xffffff);
+        document.body.appendChild(renderer.domElement);
+    }
+
+    var camera;
+    function initCamera() {
+        camera = new THREE.PerspectiveCamera(15, window.innerWidth/window.innerHeight, 0.1, 2000);
+        camera.position.set(100, 200, 200);
+        camera.lookAt(new THREE.Vector3(0,0,0));
+    }
+
+    var scene;
+    function initScene() {
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xa0a0a0);
+        // scene.fog = new THREE.Fog(0xa0a0a0, 10, 22);
+    }
+
+    //初始化dat.GUI简化试验流程
+    var gui;
+    var obj = {
+        speed : 2
+    };
+    function initGui() {
+        //声明一个保存需求修改的相关数据的对象
+        gui = {
+        };
+        var datGui = new dat.GUI();
+        //将设置属性添加到gui当中，gui.add(对象，属性，最小值，最大值）
+    datGui.add(obj, 'speed',0,10);
+    }
+
+    var light;
+    function initLight() {
+        scene.add(new THREE.AmbientLight(0x444444));
+
+        light = new THREE.PointLight(0xffffff);
+        light.position.set(0,50,0);
+
+        //告诉平行光需要开启阴影投射
+        light.castShadow = true;
+
+        var directionalLight = new THREE.DirectionalLight(0xffffff, 0.3); //模拟远处类似太阳的光源
+        directionalLight.color.setHSL(0.1, 1, 0.95);
+        directionalLight.position.set(0, 200, 0).normalize();
+        scene.add(directionalLight);
+
+        scene.add(light);
+    }
+
+    var composer;
+    function initModel() {
+
+        //辅助工具
+        // var helper = new THREE.AxesHelper(50);
+        // scene.add(helper);
+
+        var mtlLoader = new THREE.MTLLoader();
+        mtlLoader.setPath('./static/models/wll/');
+        //加载mtl文件
+        mtlLoader.load('1.mtl', function (material) {
+            var objLoader = new THREE.OBJLoader();
+            //设置当前加载的纹理
+            objLoader.setMaterials(material);
+            objLoader.setPath('./static/models/wll/');
+            objLoader.load('1.obj', function (object) {
+
+                //将模型缩放并添加到场景当中
+                object.scale.set(1, 1, 1);
+                object.position.set(-1.5,-1.35,-0.24)
+                scene.add(object);
+            })
+        });
+    }
+
+    //初始化性能插件
+    var stats;
+    function initStats() {
+        stats = new Stats();
+        document.body.appendChild(stats.dom);
+    }
+
+    //用户交互插件 鼠标左键按住旋转，右键按住平移，滚轮缩放
+    var controls;
+    function initControls() {
+
+        controls = new THREE.OrbitControls( camera, renderer.domElement );
+
+        // 如果使用animate方法时，将此函数删除
+        //controls.addEventListener( 'change', render );
+        // 使动画循环使用时阻尼或自转 意思是否有惯性
+        controls.enableDamping = true;
+        //动态阻尼系数 就是鼠标拖拽旋转灵敏度
+        //controls.dampingFactor = 0.25;
+        //是否可以缩放
+        controls.enableZoom = true;
+        //是否自动旋转
+        controls.autoRotate = true;
+        // controls.autoRotateSpeed = 3.0;
+        //设置相机距离原点的最远距离
+        controls.minDistance  = 1;
+        //设置相机距离原点的最远距离
+        controls.maxDistance  = 2000;
+        //是否开启右键拖拽
+        controls.enablePan = true;
+    }
+
+    function render() {
+
+        renderer.render( scene, camera );
+    }
+
+    function createCubeWall(width, height, depth, angle, material, x, y, z, name) {
+      var cubeGeometry = new THREE.BoxGeometry(width, height, depth);
+      var cube = new THREE.Mesh(cubeGeometry, material);
+      cube.position.x = x;
+      cube.position.y = y;
+      cube.position.z = z;
+      cube.rotation.y += angle * Math.PI; //-逆时针旋转,+顺时针
+      cube.name = name;
+      scene.add(cube);
+    }
+    //窗口变动触发的函数
+    function onWindowResize() {
+
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        render();
+        renderer.setSize( window.innerWidth, window.innerHeight );
+
+    }
+
+    function animate() {
+        //更新控制器
+        render();
+
+        //更新性能插件
+        stats.update();
+
+        controls.autoRotateSpeed = obj.speed;
+        controls.update();
+        composer.render();
+        requestAnimationFrame(animate);
+    }
+
+    //创建墙纹理
+     function createWallMaterail(){
+         matArrayA.push(new THREE.MeshPhongMaterial({color: 0xafc0ca,transparent: true,opacity: 0}));  //前  
+         matArrayA.push(new THREE.MeshPhongMaterial({color: 0xafc0ca,transparent: true,opacity: 0}));  //后
+         matArrayA.push(new THREE.MeshPhongMaterial({color: 0xafc0ca,transparent: true,opacity: 0}));  //上 
+         matArrayA.push(new THREE.MeshPhongMaterial({color: 0xafc0ca,transparent: true,opacity: 0}));  //下
+         matArrayA.push(new THREE.MeshPhongMaterial({color: 0xafc0ca,transparent: true,opacity: 0}));  //左   
+         matArrayA.push(new THREE.MeshPhongMaterial({color: 0xafc0ca,transparent: true,opacity: 0}));  //右
+
+         matArrayB.push(new THREE.MeshPhongMaterial({color: 0xafc0ca,transparent: true,opacity: 0}));  //前 
+         matArrayB.push(new THREE.MeshPhongMaterial({color: 0xafc0ca,transparent: true,opacity: 0}));  //后  
+         matArrayB.push(new THREE.MeshPhongMaterial({color: 0xafc0ca,transparent: true,opacity: 0}));  //上  
+         matArrayB.push(new THREE.MeshPhongMaterial({color: 0xafc0ca,transparent: true,opacity: 0}));  //下
+         matArrayB.push(new THREE.MeshPhongMaterial({color: 0xafc0ca,transparent: true,opacity: 0}));  //左   
+         matArrayB.push(new THREE.MeshPhongMaterial({color: 0xafc0ca,transparent: true,opacity: 0}));  //右
+
+        //  matArrayA.push(new THREE.MeshPhongMaterial({color: 0xafc0ca, alphaMap: 'white'}));  //前  0xafc0ca :灰色
+        //  matArrayA.push(new THREE.MeshPhongMaterial({color: 0xafc0ca, alphaMap: 'white'}));  //后
+        //  matArrayA.push(new THREE.MeshPhongMaterial({color: 0xd6e4ec, alphaMap: 'white'}));  //上  0xd6e4ec： 偏白色
+        //  matArrayA.push(new THREE.MeshPhongMaterial({color: 0xd6e4ec, alphaMap: 'white'}));  //下
+        //  matArrayA.push(new THREE.MeshPhongMaterial({color: 0xafc0ca, alphaMap: 'white'}));  //左    0xafc0ca :灰色
+        //  matArrayA.push(new THREE.MeshPhongMaterial({color: 0xafc0ca, alphaMap: 'white'}));  //右
+
+        //  matArrayB.push(new THREE.MeshPhongMaterial({color: 0xafc0ca, alphaMap: 'white'}));  //前  0xafc0ca :灰色
+        //  matArrayB.push(new THREE.MeshPhongMaterial({color: 0x9cb2d1, alphaMap: 'white'}));  //后  0x9cb2d1：淡紫
+        //  matArrayB.push(new THREE.MeshPhongMaterial({color: 0xd6e4ec, alphaMap: 'white'}));  //上  0xd6e4ec： 偏白色
+        //  matArrayB.push(new THREE.MeshPhongMaterial({color: 0xd6e4ec, alphaMap: 'white'}));  //下
+        //  matArrayB.push(new THREE.MeshPhongMaterial({color: 0xafc0ca, alphaMap: 'white'}));  //左   0xafc0ca :灰色
+        //  matArrayB.push(new THREE.MeshPhongMaterial({color: 0xafc0ca, alphaMap: 'white'}));  //右
+     }
+    function initContent() {
+        // createFloor();
+            createWallMaterail();
+            // width, height, depth, angle, material, x, y, z, name
+            //网络楼正常窗户规格：长2.5M,宽1.9M
+            //第六层11扇窗户
+            createCubeWall(3.5, 1.8, 0.5, 0, matArrayB, -13.7, 3.45, 3.45,  "窗户");
+            createCubeWall(3.5, 1.8, 0.5, 0, matArrayB, -9.6, 3.45, 3.45,  "窗户");
+            createCubeWall(3.5, 1.8, 0.5, 0, matArrayB, -5.6, 3.45, 3.45,  "窗户");
+            createCubeWall(3.5, 1.8, 0.5, 0, matArrayB, -1.5, 3.45, 3.45,  "窗户");
+            createCubeWall(3.5, 1.8, 0.5, 0, matArrayB, 2.4, 3.45, 3.45,  "窗户");
+            createCubeWall(3.5, 1.8, 0.5, 0, matArrayB, 6.5, 3.45, 3.45, "窗户");
+            createCubeWall(3.5, 1.8, 0.5, 0, matArrayB, 10.4, 3.45, 3.45, "窗户");
+            createCubeWall(3.5, 1.8, 0.5, 0, matArrayB, 14.5, 3.45, 3.45, "窗户");
+            createCubeWall(3.5, 1.8, 0.5, 0, matArrayB, 18.4, 3.45, 3.45, "窗户");
+            createCubeWall(3.5, 1.8, 0.5, 0, matArrayB, 22.5, 3.45, 3.45, "窗户");
+            createCubeWall(3.5, 1.8, 0.5, 0, matArrayB, 26.6, 3.45, 3.45, "窗户");
+            //第五层11扇窗户（7+4）
+            createCubeWall(2.7, 2, 0.5, 0, matArrayB, -13.4, -0.2, 3.5, "窗户长2.5M,宽1.9M");
+            createCubeWall(2.7, 2, 0.5, 0, matArrayB, -9.2, -0.2, 3.5,  "窗户长2.5M,宽1.9M");
+            createCubeWall(2.7, 2, 0.5, 0, matArrayB, -5.1, -0.2, 3.5,  "窗户长2.5M,宽1.9M");
+            createCubeWall(2.7, 2, 0.5, 0, matArrayB, -1, -0.2, 3.5,  "窗户长2.5M,宽1.9M");
+            createCubeWall(2.7, 2, 0.5, 0, matArrayB, 2.65, -0.2, 3.5,  "窗户长2.5M,宽1.9M");
+            createCubeWall(2.7, 2, 0.5, 0, matArrayB, 6.65, -0.2, 3.5, "窗户长2.5M,宽1.9M");
+            createCubeWall(2.7, 2, 0.5, 0, matArrayB, 10.8, -0.2, 3.5, "窗户长2.5M,宽1.9M");
+
+            createCubeWall(2.3, 2.3, 0.5, 0, matArrayB, 15.7, -0.2, 5, "窗户");
+            createCubeWall(2.3, 2.3, 0.5, 0, matArrayB, 19.7, -0.2, 5, "窗户");
+            createCubeWall(2.3, 2.3, 0.5, 0, matArrayB, 23.6, -0.2, 5, "窗户");
+            createCubeWall(2.3, 2.3, 0.5, 0, matArrayB, 27.5, -0.2, 5, "窗户");
+            //第四层11扇窗户（7+4）
+            createCubeWall(2.7, 2, 0.5, 0, matArrayB, -13.4, -4.15, 3.5, "窗户长2.5M,宽1.9M");
+            createCubeWall(2.7, 2, 0.5, 0, matArrayB, -9.2, -4.15,3.5,  "窗户长2.5M,宽1.9M");
+            createCubeWall(2.7, 2, 0.5, 0, matArrayB, -5.1, -4.15, 3.5,  "窗户长2.5M,宽1.9M");
+            createCubeWall(2.7, 2, 0.5, 0, matArrayB, -1, -4.15, 3.5,  "窗户长2.5M,宽1.9M");
+            createCubeWall(2.7, 2, 0.5, 0, matArrayB, 2.65, -4.15, 3.5,  "窗户长2.5M,宽1.9M");
+            createCubeWall(2.7, 2, 0.5, 0, matArrayB, 6.65, -4.15, 3.5, "窗户长2.5M,宽1.9M");
+            createCubeWall(2.7, 2, 0.5, 0, matArrayB, 10.8, -4.15, 3.5, "窗户长2.5M,宽1.9M");
+
+            createCubeWall(2.3, 2.3, 0.5, 0, matArrayB, 15.7, -4.15, 5, "窗户长2.5M,宽1.9M");
+            createCubeWall(2.3, 2.3, 0.5, 0, matArrayB, 19.7, -4.15, 5, "窗户长2.5M,宽1.9M");
+            createCubeWall(2.3, 2.3, 0.5, 0, matArrayB, 23.6, -4.15, 5, "窗户长2.5M,宽1.9M");
+            createCubeWall(2.3, 2.3, 0.5, 0, matArrayB, 27.5, -4.15, 5, "窗户长2.5M,宽1.9M");
+            //第三层15扇窗户（4+7+4）
+            createCubeWall(1.8, 2.1, 0.5, 0, matArrayB, -29.6, -7.45, 3.5, "窗户");
+            createCubeWall(2.2, 2.1, 0.5, 0, matArrayB, -26.4, -7.45, 3.5, "窗户");
+            createCubeWall(2.2, 2.1, 0.5, 0, matArrayB, -21.2, -7.45, 3.5, "窗户");
+            createCubeWall(2.2, 2.1, 0.5, 0, matArrayB, -18.3, -7.45, 3.5, "窗户");
+            
+            createCubeWall(2.7, 2, 0.5, 0, matArrayB, -13.4, -7.9, 3.5, "窗户长2.5M,宽1.9M");
+            createCubeWall(2.7, 2, 0.5, 0, matArrayB, -9.2, -7.9,3.5,  "窗户长2.5M,宽1.9M");
+            createCubeWall(2.7, 2, 0.5, 0, matArrayB, -5.1, -7.9, 3.5,  "窗户长2.5M,宽1.9M");
+            createCubeWall(2.7, 2, 0.5, 0, matArrayB, -1, -7.9, 3.5,  "窗户长2.5M,宽1.9M");
+            createCubeWall(2.7, 2, 0.5, 0, matArrayB, 2.65, -7.9, 3.5,  "窗户长2.5M,宽1.9M");
+            createCubeWall(2.7, 2, 0.5, 0, matArrayB, 6.65, -7.9, 3.5, "窗户长2.5M,宽1.9M");
+            createCubeWall(2.7, 2, 0.5, 0, matArrayB, 10.8, -7.9, 3.5, "窗户长2.5M,宽1.9M");
+            
+            createCubeWall(2.3, 2.3, 0.5, 0, matArrayB, 15.7, -7.9, 5, "窗户长2.5M,宽1.9M");
+            createCubeWall(2.3, 2.3, 0.5, 0, matArrayB, 19.7, -7.9, 5, "窗户长2.5M,宽1.9M");
+            createCubeWall(2.3, 2.3, 0.5, 0, matArrayB, 23.6, -7.9, 5, "窗户长2.5M,宽1.9M");
+            createCubeWall(2.3, 2.3, 0.5, 0, matArrayB, 27.5, -7.9, 5, "窗户长2.5M,宽1.9M");
+            //第二层15扇窗户（4+7+4）
+            createCubeWall(2.2, 2.3, 0.5, 0, matArrayB, -29.6, -12.1, 6.6, "窗户");
+            createCubeWall(2.2, 2.1, 0.5, 0, matArrayB, -26.4, -12.1, 6.6, "窗户");
+            createCubeWall(2.2, 2.1, 0.5, 0, matArrayB, -21.2, -12.1, 6.6, "窗户");
+            createCubeWall(2.2, 2.1, 0.5, 0, matArrayB, -18.3, -12.1, 6.6, "窗户");
+            
+            createCubeWall(2.7, 2, 0.5, 0, matArrayB, -13.4, -11.4, 4, "窗户长2.5M,宽1.9M");
+            createCubeWall(2.7, 2, 0.5, 0, matArrayB, -9.2, -11.4, 4,  "窗户长2.5M,宽1.9M");
+            createCubeWall(2.7, 2, 0.5, 0, matArrayB, -5.1, -11.4, 4,  "窗户长2.5M,宽1.9M");
+            createCubeWall(2.7, 2, 0.5, 0, matArrayB, -1, -11.4, 4,  "窗户长2.5M,宽1.9M");
+            createCubeWall(2.7, 2, 0.5, 0, matArrayB, 2.65, -11.4, 4,  "窗户长2.5M,宽1.9M");
+            createCubeWall(2.7, 2, 0.5, 0, matArrayB, 6.65, -11.4, 4, "窗户长2.5M,宽1.9M");
+            createCubeWall(2.7, 2, 0.5, 0, matArrayB, 10.8, -11.4, 4, "窗户长2.5M,宽1.9M");
+            
+            createCubeWall(2.3, 2.3, 0.5, 0, matArrayB, 15.7, -11.4, 5, "窗户长2.5M,宽1.9M");
+            createCubeWall(2.3, 2.3, 0.5, 0, matArrayB, 19.7, -11.4, 5, "窗户长2.5M,宽1.9M");
+            createCubeWall(2.3, 2.3, 0.5, 0, matArrayB, 23.6, -11.4, 5, "窗户长2.5M,宽1.9M");
+            createCubeWall(2.3, 2.3, 0.5, 0, matArrayB, 27.5, -11.4, 5, "窗户长2.5M,宽1.9M");
+            //第一层15扇窗户（4+7+4）
+            createCubeWall(2.2, 2.3, 0.5, 0, matArrayB, -29.6, -16.5, 6.6, "窗户");
+            createCubeWall(2.2, 2.3, 0.5, 0, matArrayB, -26.4, -16.5, 6.6, "窗户");
+            createCubeWall(2.2, 2.1, 0.5, 0, matArrayB, -21.2, -16.5, 6.6, "窗户");
+            createCubeWall(2.2, 2.1, 0.5, 0, matArrayB, -18.3, -16.5, 6.6, "窗户");
+            
+            createCubeWall(2.7, 2, 0.5, 0, matArrayB, -13.4, -16, 4, "窗户长2.5M,宽1.9M");
+            createCubeWall(2.7, 2, 0.5, 0, matArrayB, -9.2, -16, 4,  "窗户长2.5M,宽1.9M");
+            createCubeWall(2.7, 2, 0.5, 0, matArrayB, -5.1, -16, 4,  "窗户长2.5M,宽1.9M");
+            createCubeWall(2.7, 2, 0.5, 0, matArrayB, -1, -16, 4,  "窗户长2.5M,宽1.9M");
+            createCubeWall(2.7, 2, 0.5, 0, matArrayB, 2.65, -16, 4,  "窗户长2.5M,宽1.9M");
+            createCubeWall(2.7, 2, 0.5, 0, matArrayB, 6.65, -16, 4, "窗户长2.5M,宽1.9M");
+            createCubeWall(2.7, 2, 0.5, 0, matArrayB, 10.8, -16, 4, "窗户长2.5M,宽1.9M");
+            
+            createCubeWall(2.3, 2.3, 0.5, 0, matArrayB, 15.7, -16, 5, "窗户长2.5M,宽1.9M");
+            createCubeWall(2.3, 2.3, 0.5, 0, matArrayB, 19.7, -16, 5, "窗户长2.5M,宽1.9M");
+            createCubeWall(2.3, 2.3, 0.5, 0, matArrayB, 23.6, -16, 5, "窗户长2.5M,宽1.9M");
+            createCubeWall(2.3, 2.3, 0.5, 0, matArrayB, 27.5, -16, 5, "窗户长2.5M,宽1.9M");
+
+            //反面
+            //第六层9扇窗户（5+3+1）
+            createCubeWall(2.7, 2.4, 0.5, 0, matArrayB, 22.1, 2.7, -14.3, "窗户长2.5M,宽1.9M");
+            createCubeWall(2.7, 2.4, 0.5, 0, matArrayB, 18.15, 2.7, -14.3,  "窗户长2.5M,宽1.9M");
+            createCubeWall(2.7, 2.4, 0.5, 0, matArrayB, 14.2, 2.7, -14.3,  "窗户长2.5M,宽1.9M");
+            createCubeWall(2.7, 2.4, 0.5, 0, matArrayB, 10.2, 2.7, -14.3,  "窗户长2.5M,宽1.9M");
+            createCubeWall(2.7, 2.4, 0.5, 0, matArrayB, 6.2, 2.7, -14.3,  "窗户长2.5M,宽1.9M");
+             
+            createCubeWall(2.1, 1.95, 0.2, 0, matArrayB, 2, 2.5, -12, "窗户长2.5M,宽1.9M");
+            createCubeWall(2.1, 1.95, 0.2, 0, matArrayB, -1.9, 2.5, -12,  "窗户长2.5M,宽1.9M");
+            createCubeWall(2.1, 1.95, 0.2, 0, matArrayB, -5.8, 2.5, -12,  "窗户长2.5M,宽1.9M");
+
+            createCubeWall(1.4, 2.4, 0.2, 0, matArrayB, -9.7, 2.4, -12,  "窗户");
+            //第五层9扇窗户（5+3+1）
+            createCubeWall(2.7, 2.4, 0.5, 0, matArrayB, 22.1, -1.1, -14.3, "窗户长2.5M,宽1.9M");
+            createCubeWall(2.7, 2.4, 0.5, 0, matArrayB, 18.15, -1.1, -14.3,  "窗户长2.5M,宽1.9M");
+            createCubeWall(2.7, 2.4, 0.5, 0, matArrayB, 14.2, -1.1, -14.3,  "窗户长2.5M,宽1.9M");
+            createCubeWall(2.7, 2.4, 0.5, 0, matArrayB, 10.2, -1.1, -14.3,  "窗户长2.5M,宽1.9M");
+            createCubeWall(2.7, 2.4, 0.5, 0, matArrayB, 6.2, -1.1, -14.3,  "窗户长2.5M,宽1.9M");
+             
+            createCubeWall(2.1, 1.95, 0.2, 0, matArrayB, 2, -1.2, -12, "窗户长2.5M,宽1.9M");
+            createCubeWall(2.1, 1.95, 0.2, 0, matArrayB, -1.9, -1.2, -12,  "窗户长2.5M,宽1.9M");
+            createCubeWall(2.1, 1.95, 0.2, 0, matArrayB, -5.8, -1.2, -12,  "窗户长2.5M,宽1.9M");
+
+            createCubeWall(1.4, 2.2, 0.2, 0, matArrayB, -9.7, -1.2, -12,  "窗户");
+            //第四层9扇窗户（5+3+1）
+            createCubeWall(2.7, 2.4, 0.5, 0, matArrayB, 22.1, -5.1, -14.3, "窗户长2.5M,宽1.9M");
+            createCubeWall(2.7, 2.4, 0.5, 0, matArrayB, 18.15, -5.1, -14.3,  "窗户长2.5M,宽1.9M");
+            createCubeWall(2.7, 2.4, 0.5, 0, matArrayB, 14.2, -5.1, -14.3,  "窗户长2.5M,宽1.9M");
+            createCubeWall(2.7, 2.4, 0.5, 0, matArrayB, 10.2, -5.1, -14.3,  "窗户长2.5M,宽1.9M");
+            createCubeWall(2.7, 2.4, 0.5, 0, matArrayB, 6.2, -5.1, -14.3,  "窗户长2.5M,宽1.9M");
+             
+            createCubeWall(2.1, 1.95, 0.2, 0, matArrayB, 2, -5.15, -12, "窗户长2.5M,宽1.9M");
+            createCubeWall(2.1, 1.95, 0.2, 0, matArrayB, -1.9, -5.15, -12,  "窗户长2.5M,宽1.9M");
+            createCubeWall(2.1, 1.95, 0.2, 0, matArrayB, -5.8, -5.15, -12,  "窗户长2.5M,宽1.9M");
+
+            createCubeWall(1.4, 2.2, 0.2, 0, matArrayB, -9.7, -5.2, -12,  "窗户");
+            //第三层9扇窗户（5+3+1）
+            createCubeWall(2.7, 2.4, 0.5, 0, matArrayB, 22.1, -8.9, -14.3, "窗户长2.5M,宽1.9M");
+            createCubeWall(2.7, 2.4, 0.5, 0, matArrayB, 18.15, -8.9, -14.3,  "窗户长2.5M,宽1.9M");
+            createCubeWall(2.7, 2.4, 0.5, 0, matArrayB, 14.2, -8.9, -14.3,  "窗户长2.5M,宽1.9M");
+            createCubeWall(2.7, 2.4, 0.5, 0, matArrayB, 10.2, -8.9, -14.3,  "窗户长2.5M,宽1.9M");
+            createCubeWall(2.7, 2.4, 0.5, 0, matArrayB, 6.2, -8.9, -14.3,  "窗户长2.5M,宽1.9M");
+             
+            createCubeWall(2.1, 1.95, 0.2, 0, matArrayB, 2, -9, -12, "窗户长2.5M,宽1.9M");
+            createCubeWall(2.1, 1.95, 0.2, 0, matArrayB, -1.9, -9, -12,  "窗户长2.5M,宽1.9M");
+            createCubeWall(2.1, 1.95, 0.2, 0, matArrayB, -5.8, -9, -12,  "窗户长2.5M,宽1.9M");
+
+            createCubeWall(1.4, 2.2, 0.2, 0, matArrayB, -9.7, -9.2, -12,  "窗户");
+            //第二层9扇窗户（5+3+1）
+            createCubeWall(2.7, 2.4, 0.5, 0, matArrayB, 22.1, -12.5, -14.3, "窗户长2.5M,宽1.9M");
+            createCubeWall(2.7, 2.4, 0.5, 0, matArrayB, 18.15, -12.5, -14.3,  "窗户长2.5M,宽1.9M");
+            createCubeWall(2.7, 2.4, 0.5, 0, matArrayB, 14.2, -12.5, -14.3,  "窗户长2.5M,宽1.9M");
+            createCubeWall(2.7, 2.4, 0.5, 0, matArrayB, 10.2, -12.5, -14.3,  "窗户长2.5M,宽1.9M");
+            createCubeWall(2.7, 2.4, 0.5, 0, matArrayB, 6.2, -12.5, -14.3,  "窗户长2.5M,宽1.9M");
+             
+            createCubeWall(2.1, 1.95, 0.2, 0, matArrayB, 2, -12.95, -12, "窗户长2.5M,宽1.9M");
+            createCubeWall(2.1, 1.95, 0.2, 0, matArrayB, -1.9, -12.95, -12,  "窗户长2.5M,宽1.9M");
+            createCubeWall(2.1, 1.95, 0.2, 0, matArrayB, -5.8, -12.95, -12,  "窗户长2.5M,宽1.9M");
+
+            createCubeWall(1.4, 2.2, 0.2, 0, matArrayB, -9.7, -13.1, -12,  "窗户");
+            //第一层9扇窗户（5+3+1）
+            createCubeWall(2.7, 2.4, 0.5, 0, matArrayB, 22.1, -16.3, -14.3, "窗户长2.5M,宽1.9M");
+            createCubeWall(2.7, 2.4, 0.5, 0, matArrayB, 18.15, -16.3, -14.3,  "窗户长2.5M,宽1.9M");
+            createCubeWall(2.7, 2.4, 0.5, 0, matArrayB, 14.2, -16.3, -14.3,  "窗户长2.5M,宽1.9M");
+            createCubeWall(2.7, 2.4, 0.5, 0, matArrayB, 10.2, -16.3, -14.3,  "窗户长2.5M,宽1.9M");
+            createCubeWall(2.7, 2.4, 0.5, 0, matArrayB, 6.2, -16.3, -14.3,  "窗户长2.5M,宽1.9M");
+             
+            createCubeWall(2.1, 1.95, 0.2, 0, matArrayB, 2, -17, -12, "窗户长2.5M,宽1.9M");
+            createCubeWall(2.1, 1.95, 0.2, 0, matArrayB, -1.9, -17, -12,  "窗户长2.5M,宽1.9M");
+            createCubeWall(2.1, 1.95, 0.2, 0, matArrayB, -5.8, -17, -12,  "窗户长2.5M,宽1.9M");
+
+            createCubeWall(1.4, 2.2, 0.2, 0, matArrayB, -9.7, -17.25, -12,  "窗户");
+            
+            //右侧单列窗户(竖的窗户)
+            createCubeWall(0.5, 2.3, 1.9,  0, matArrayB, 30, 2.7, -6,  "窗户长2.5M,宽1.9M");
+            createCubeWall(0.5, 2.3, 1.9,  0, matArrayB, 30, -1.1, -6,  "窗户长2.5M,宽1.9M");
+            createCubeWall(0.5, 2.3, 1.9,  0, matArrayB, 30, -5, -6,  "窗户长2.5M,宽1.9M");
+            createCubeWall(0.5, 2.3, 1.9,  0, matArrayB, 30, -8.9, -6,  "窗户长2.5M,宽1.9M");
+            createCubeWall(0.5, 2.3, 1.9,  0, matArrayB, 30, -12.5, -6,  "窗户长2.5M,宽1.9M");
+            createCubeWall(0.5, 2.3, 1.9,  0, matArrayB, 30, -16.3, -6,  "窗户长2.5M,宽1.9M");
+
+            //左侧2扇窗户（竖的窗户）
+            createCubeWall(0.6, 3.22, 1.46,  0, matArrayB, -15.7, 1.59, -5.2,  "窗户");
+            createCubeWall(0.6, 3.22, 1.46,  0, matArrayB, -15.7, -2.27, -5.2,  "窗户");
+
+            //左侧巨型窗户
+            createCubeWall(0.4, 18, 1.95,  0, matArrayB, -17, -2.7, -8.8,  "窗户(巨型落地窗)");
+            
+            //左侧下方窗户
+            //第三层6扇窗户（1+4+1）
+            createCubeWall(0.2, 2.8, 2.2,  0, matArrayB, -32.4, -7.9, -10,  "窗户");
+
+            createCubeWall(0.2, 2.8, 1.2,  0, matArrayB, -32.4, -7.9, -6.6,  "窗户");
+            createCubeWall(0.2, 2.8, 1.2,  0, matArrayB, -32.4, -7.9, -4.8,  "窗户");
+            createCubeWall(0.2, 2.8, 1.2,  0, matArrayB, -32.4, -7.9, -3,  "窗户");
+            createCubeWall(0.2, 2.8, 1.2,  0, matArrayB, -32.4, -7.9, -1.1,  "窗户");
+
+            createCubeWall(0.2, 2.6, 2.2,  0, matArrayB, -32.4, -7.9, 2.3,  "窗户");
+            //第二层7扇窗户(1+4+2)
+            createCubeWall(0.2, 2.6, 2.2,  0, matArrayB, -32.4, -12.8, -10,  "窗户");
+
+            createCubeWall(0.2, 2, 1.2,  0, matArrayB, -32.4, -13.1, -6.6,  "窗户");
+            createCubeWall(0.2, 2, 1.2,  0, matArrayB, -32.4, -13.1, -4.8,  "窗户");
+            createCubeWall(0.2, 2, 1.2,  0, matArrayB, -32.4, -13.1, -3,  "窗户");
+            createCubeWall(0.2, 2, 1.2,  0, matArrayB, -32.4, -13.1, -1.1,  "窗户");
+
+            createCubeWall(0.2, 2.3, 2.2,  0, matArrayB, -32.4, -13.1, 2.3,  "窗户");
+            createCubeWall(0.2, 2.3, 2.2,  0, matArrayB, -32.4, -13.1, 5.3,  "窗户");
+            //第一层7扇窗户(1+4+2)
+            createCubeWall(0.2, 2.6, 2.2,  0, matArrayB, -32.4, -16.9, -10,  "窗户长2.5M,宽1.9M");
+
+            createCubeWall(0.2, 2.3, 1.1,  0, matArrayB, -32.4, -17.2, -6.6,  "窗户");
+            createCubeWall(0.2, 2.3, 1.1,  0, matArrayB, -32.4, -17.2, -4.8,  "窗户");
+            createCubeWall(0.2, 2.3, 1.1,  0, matArrayB, -32.4, -17.2, -3,  "窗户");
+            createCubeWall(0.2, 2.3, 1.1,  0, matArrayB, -32.4, -17.2, -1.1,  "窗户");
+
+            createCubeWall(0.2, 2.3, 2,  0, matArrayB, -32.4, -17.2, 2.3,  "窗户长2.5M,宽1.9M");
+            createCubeWall(0.2, 2.3, 2,  0, matArrayB, -32.4, -17.2, 5.3,  "窗户长2.5M,宽1.9M");
+
+            //反面两侧窗户
+            //第五层2扇窗户（1+1）
+            createCubeWall(1.8, 1.5, 0.2,  0, matArrayB, 26.5, 1.1, -14.7,  "窗户");
+            createCubeWall(1.6, 1.5, 0.2,  0, matArrayB, -15.2, 0.9, -12,  "窗户");
+            //第四层2扇窗户（1+1）
+            createCubeWall(1.8, 1.5, 0.2,  0, matArrayB, 26.5, -2.4, -14.7,  "窗户");
+            createCubeWall(1.6, 1.5, 0.2,  0, matArrayB, -15.2, -3.1, -12,  "窗户");
+            //第三层2扇窗户（1+1）
+            createCubeWall(1.8, 1.5, 0.2,  0, matArrayB, 26.5, -6.4, -14.7,  "窗户");
+            createCubeWall(1.6, 1.5, 0.2,  0, matArrayB, -15.2, -7.15, -12,  "窗户");
+            //第二层2扇窗户（1+1）
+            createCubeWall(1.8, 1.5, 0.2,  0, matArrayB, 26.5, -10.4, -14.7,  "窗户");
+            createCubeWall(1.6, 1.5, 0.2,  0, matArrayB, -15.2, -11.2, -12,  "窗户");
+            //第一层2扇窗户（1+1）
+            createCubeWall(1.8, 1.5, 0.2,  0, matArrayB, 26.5, -14.95, -14.7,  "窗户");
+            createCubeWall(1.6, 1.5, 0.2,  0, matArrayB, -15.2, -15.15, -12,  "窗户");
+
+            //后面下方窗户
+            //第三层4扇窗户（独立）
+            createCubeWall(1.7, 2.3, 0.2,  0, matArrayB, -18.9, -7.5, -12,  "窗户长2.5M,宽1.9M");
+            createCubeWall(1.7, 2.3, 0.2,  0, matArrayB, -22.4, -7.5, -12,  "窗户长2.5M,宽1.9M");
+            createCubeWall(1.7, 2.3, 0.2,  0, matArrayB, -26.4, -7.5, -12,  "窗户长2.5M,宽1.9M");
+            createCubeWall(1.7, 2.3, 0.2,  0, matArrayB, -30.2, -7.5, -12,  "窗户长2.5M,宽1.9M");
+            //第二层4扇窗户
+            createCubeWall(1.9, 2, 0.2,  0, matArrayB, -18.9, -12.5, -12,  "窗户");
+            createCubeWall(1.9, 2, 0.2,  0, matArrayB, -22.4, -12.5, -12,  "窗户");
+            createCubeWall(1.9, 2, 0.2,  0, matArrayB, -26.4, -12.5, -12,  "窗户");
+            createCubeWall(1.9, 2, 0.2,  0, matArrayB, -30.2, -12.5, -12,  "窗户");
+            //第一层4扇窗户
+            createCubeWall(1.9, 2, 0.2,  0, matArrayB, -18.9, -16.8, -12,  "窗户长2.5M,宽1.9M");
+            createCubeWall(1.9, 2, 0.2,  0, matArrayB, -22.4, -16.8, -12,  "窗户长2.5M,宽1.9M");
+            createCubeWall(1.9, 2, 0.2,  0, matArrayB, -26.4, -16.8, -12,  "窗户长2.5M,宽1.9M");
+            createCubeWall(1.9, 2, 0.2,  0, matArrayB, -30.2, -16.8, -12,  "窗户长2.5M,宽1.9M");
+
+            //空调外机（设定好形状后单独检测每个坐标）
+            //第一种类型的（4+2+4）（正面）
+            createCubeWall(1.3, 1.1, 1,  0, matArrayB, -13.3, -2.6, 4.57,  "空调外机(小)");
+            createCubeWall(1.3, 1.1, 1,  0, matArrayB, -4.4, -2.6, 4.57,  "空调外机(小)");
+            createCubeWall(1.3, 1.1, 1,  0, matArrayB, -0.5, -2.6, 4.57,  "空调外机(小)");
+            createCubeWall(1.55, 1.1, 1,  0, matArrayB, 27.2, -2.5, 6.07,  "空调外机(小)");
+
+            createCubeWall(1.3, 1.1, 1,  0, matArrayB, 2, -6.1, 4.57,  "空调外机(小)");
+            createCubeWall(1.3, 1.1, 1,  0, matArrayB, 27, -6.1, 6.07,  "空调外机(小)");
+
+            createCubeWall(1.3, 1.1, 1.3,  0, matArrayB, -7.35, -13, 5.05,  "空调外机(小)");
+            createCubeWall(1.3, 1.1, 1,  0, matArrayB, 6.8, -13.5, 5.05,  "空调外机(小)");
+            createCubeWall(1.3, 1.1, 1,  0, matArrayB, 15.5, -13.5, 6.07,  "空调外机(小)");
+            createCubeWall(1.3, 1.1, 1,  0, matArrayB, 27.3, -13.5, 6.07,  "空调外机(小)");
+
+            //（1+1+1）反面
+            createCubeWall(1.3, 1.1, 1,  0, matArrayB, 22.9, 0.8, -15.5,  "空调外机(小)");
+            createCubeWall(1.3, 1.1, 1,  0, matArrayB, 7.25, -3.2, -15.5,  "空调外机(小)");
+            createCubeWall(1.3, 1.1, 1,  0, matArrayB, -30.45, -19.2, -12.75,  "空调外机(小)");
+
+            //第二种类型的（1+1+1）
+            createCubeWall(1.6, 1.9, 1,  0, matArrayB, 24.8, -2.14, -15.5,  "空调外机(大)");
+            createCubeWall(1.4, 1.6, 1,  0, matArrayB, -30.5, -14.5, 7.66,  "空调外机(大)");
+            createCubeWall(0.95, 1.7, 1,  0, matArrayB, 8.6, -8.3, 4.57,  "空调外机(大)");
+    }
+    
+    function draw() {
+        initGui();
+        initRender();
+        initScene();
+        initCamera();
+        initLight();
+        initModel();
+        initControls();
+        initStats();
+        initContent();
+
+        //添加选中时的蒙版
+        composer = new THREE.ThreeJs_Composer(renderer, scene, camera);
+        animate();
+        window.onresize = onWindowResize;
+    }
+</script>
+</body>
+</html>
