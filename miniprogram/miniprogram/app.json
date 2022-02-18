@@ -1,0 +1,27 @@
+{
+  "pages": [
+    
+    "pages/index/index",
+    "pages/pics/showPointCloud/index",
+    "pages/pics/showBlankModel/index",
+    "pages/pics/test/index",
+    "pages/webgl/viewBussinessSchool/index",
+    "pages/webgl/viewInternetBuilding/index",
+    "pages/webgl/viewDorm5/index",
+    "pages/webgl/viewResult/index",
+    "pages/CV/index",
+    "pages/description/BM/index",
+    "pages/description/CV/index",
+    "pages/description/DL/index",
+    "pages/description/Web/index"
+  ],
+  "window": {
+    "backgroundColor": "#F6F6F6",
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#F6F6F6",
+    "navigationBarTitleText": "",
+    "navigationBarTextStyle": "black"
+  },
+  "sitemapLocation": "sitemap.json",
+  "style": "v2"
+}

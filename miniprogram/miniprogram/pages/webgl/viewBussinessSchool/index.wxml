@@ -1,0 +1,9 @@
+<!--pages/webgl/viewBussinessSchool/index.wxml-->
+<view style="height: 100vh; width: 100vh;">
+<!-- <view> -->
+    <canvas type="webgl" id="c" bindtouchstart="touchStart" bindtouchmove="touchMove" bindtouchend="touchEnd" bindtouchcancel="touchCancel" bindlongtap="longTap" bindtap="tap" >
+    </canvas>
+</view>
+<!-- <scroll-view>
+    <towxml nodes="{{article}}"/>
+</scroll-view> -->

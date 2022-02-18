@@ -1,0 +1,1 @@
+"F:\微信web开发者工具\cli.bat" cloud functions deploy --e testsduwh030201-icc8o --n quickstartFunctions --r --project "E:\ongoing-lectures\深度学习\VisualCampus\Visualcampus-miniprogram" --report_first --report

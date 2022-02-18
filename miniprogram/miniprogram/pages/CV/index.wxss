@@ -1,0 +1,116 @@
+/* pages/CV/index.wxss */
+.img{
+  width: 100%;
+  /* height: 50%; */
+  /* display:flex; 
+  justify-content: center; */
+}
+.myCanvas{
+  border: 1px solid;
+  border-radius: 5px;
+
+}
+.imagesize{
+  display:flex;                   
+  justify-content: center;         
+  align-items:center;
+}
+
+
+/* 导航栏布局相关 */
+.navbar {
+  margin-top: 30rpx;
+  width: 100%;
+  height: 90rpx;
+  /* 文本不换行 */
+  white-space: nowrap;
+  display: flex;
+  box-sizing: border-box;
+  border-bottom: 5rpx solid #eee;
+  background: #fff;
+  align-items: center;
+  
+}
+
+.nav-item {
+  padding-left: 15rpx;
+  padding-right: 15rpx;
+  height: 100%;
+  display: inline-block;
+  /* 普通文字大小 */
+  font-size: 28rpx;
+}
+
+.nav-text {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: 4rpx;
+  box-sizing: border-box;
+}
+
+.tab-on {
+  color: #0e0d0d;
+  /* 选中放大 */
+  font-size: 38rpx !important;
+  font-weight: 600;
+  /* border-bottom: 4rpx solid black !important; */
+}
+
+.viewTop{
+  color:white;
+  background-color: white;
+  /* margin-top:2px; */
+  display:flex;
+}
+
+
+.viewMiddle{
+  color:white;
+  background-color: white;
+  /* margin-top:5px; */
+  display:flex;
+}
+
+.mybutton{
+  /* background-color: #c7f0bc; */
+  width: 30rpx;
+  height: 100rpx;
+  /* 按钮文字居中 */
+  text-align: center;
+  line-height: 75rpx;
+  margin-top:6px;
+  margin-bottom:6px;
+  margin-right:12px;
+  margin-left:6px;
+  
+  /* border-radius:15px; */
+  color:rgb(119, 202, 230);
+}
+
+.buttonBottom{
+  background-color: #4db2ec;
+  margin-top:10px;
+  margin-bottom:5px;
+  margin-right:10px;
+  margin-left:5px;
+  border-radius:15px;
+  text-align: center;
+  line-height: 40rpx;
+  color:white;
+}
+
+.view_bottom{
+  position: fixed;
+  display:flex;
+  margin-bottom: 20rpx;
+  margin-left: 0rpx;
+}
+
+.status{
+  color: gray;
+  font-size: 26rpx;
+  margin-left: 24rpx;
+}

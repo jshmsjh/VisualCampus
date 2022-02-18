@@ -1,0 +1,5 @@
+<!--pages/webgl/viewInternetBuilding/index.wxml-->
+<view style="height: 100vh; width: 100vh;">
+    <canvas type="webgl" id="c" bindtouchstart="touchStart" bindtouchmove="touchMove" bindtouchend="touchEnd" bindtouchcancel="touchCancel" bindlongtap="longTap" bindtap="tap">
+    </canvas>
+</view>

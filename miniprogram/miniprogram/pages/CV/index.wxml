@@ -1,0 +1,94 @@
+<!--pages/CV/index.wxml-->
+<view class='imagesize'>
+  <view style="width: 739rpx; height: 725rpx; display: block; box-sizing: border-box" scroll-y="">
+    <image class='img' src='{{canvasURL}}' mode="aspectFit" style="position: fixed; left: 0rpx; top: 85rpx; width: 750rpx; height: 539rpx; display: block; box-sizing: border-box"></image>
+  </view>
+</view>
+
+<view>
+  <text class="status">服务器状态：{{status}}</text>
+</view>
+
+<view>
+      <scroll-view scroll-x class="navbar" scroll-with-animation scroll-left="{{scrollLeft}}rpx" >
+        <view class="nav-item" wx:for="{{tabs}}" wx:key="id" bindtap="tabSelect" data-id="{{index}}">
+          <view class="nav-text {{index==tabCur?'tab-on':''}}">{{item.name}}</view>
+        </view>
+      </scroll-view>
+</view>
+
+
+<block wx:if='{{tabCur==0}}'>
+  <view class='viewTop'>
+    <button bindtap='brighter' class='mybutton'>变亮</button>
+    <button bindtap='dimmer' class='mybutton'>变暗</button>
+  </view>
+  <view class='viewMiddle'>
+    <button bindtap='blur' class='mybutton'>模糊</button>
+    <button bindtap='smooth' class='mybutton'>平滑</button>
+  </view>
+  <view class='viewMiddle'>
+    <button bindtap='toGray' class='mybutton'>灰度变化</button>
+    <button bindtap='toBinary' class='mybutton'>二值化</button>
+  </view>
+</block>
+
+<block wx:if='{{tabCur==1}}'>
+  <view class='viewTop'>
+    <button bindtap='meanBlur' class='mybutton'>均值滤波</button>
+    <button bindtap='medianBlur' class='mybutton'>中值滤波</button>
+  </view>
+  <view class='viewMiddle'>
+    <button bindtap='gaussianBlur' class='mybutton'>高斯滤波</button>
+    <button bindtap='maskBlur' class='mybutton'>掩模滤波</button>
+  </view>
+</block>
+
+<block wx:if='{{tabCur==2}}'>
+  <view class='viewTop'>
+    <button bindtap='sobel' class='mybutton'>Sobel</button>
+    <button bindtap='laplacian' class='mybutton'>Laplacian</button>
+  </view>
+  <view class='viewMiddle'>
+    <button bindtap='canny' class='mybutton'>Canny</button>
+    <button bindtap='contour' class='mybutton'>轮廓获取</button>
+  </view>
+</block>
+
+<block wx:if='{{tabCur==3}}'>
+  <view class='viewTop'>
+    <button bindtap='otsu' class='mybutton'>Otsu</button>
+    <button bindtap='sauvola' class='mybutton'>Sauvola</button>
+  </view>
+  <view class='viewMiddle'>
+    <button bindtap='MA' class='mybutton'>移动平均</button>
+    <button bindtap='adaThresh' class='mybutton'>自适应阈值</button>
+  </view>
+</block>
+
+<block wx:if='{{tabCur==4}}'>
+  <view class='viewTop'>
+    <button bindtap='erode' class='mybutton'>腐蚀</button>
+    <button bindtap='dilate' class='mybutton'>膨胀</button>
+  </view>
+  <view class='viewMiddle'>
+    <button bindtap='opening' class='mybutton'>开运算</button>
+    <button bindtap='closing' class='mybutton'>闭运算</button>
+  </view>
+</block>
+
+<block wx:if='{{tabCur==5}}'>
+  <view class='viewTop'>
+    <button bindtap='equalizeHist' class='mybutton'>直方图均衡</button>
+    <button bindtap='clahe' class='mybutton'>限制对比度直方图</button>
+  </view>
+  <view class='viewMiddle'>
+    <button bindtap='edgeRein' class='mybutton'>边缘增强</button>
+    <button bindtap='USM' class='mybutton'>USM锐化增强</button>
+  </view>
+</block>
+
+<view class='view_bottom' style="position: fixed; left: 52rpx; top: 1304rpx">
+  <button bindtap="uploadImg" class="buttonBottom" style="width: 287rpx; height: 77rpx; display: block; box-sizing: border-box; left: 0rpx; top: 0rpx">上传图片</button>
+  <button bindtap="saveImg" class='buttonBottom' style="width: 287rpx; height: 77rpx; display: block; box-sizing: border-box; left: 64rpx; top: 0rpx; position: relative">保存图片</button>
+</view>

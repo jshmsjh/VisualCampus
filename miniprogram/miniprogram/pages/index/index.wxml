@@ -1,0 +1,33 @@
+<!--index.wxml-->
+<view class="container">
+
+  <view class="title">VisualCampus</view>
+
+  <view class="top_tip">三维模型展示 plus 计算机视觉方法</view>
+
+  <view class="power" wx:key="title" wx:for="{{powerList}}" wx:for-item="power">
+    <view class="power_info" data-index="{{index}}" bindtap="onClickPowerInfo">
+      <view class="power_info_text">
+        <view class="power_info_text_title">{{power.title}}</view>
+        <view class="power_info_text_tip">{{power.tip}}</view>
+      </view>
+      <image wx:if="{{!power.showItem}}" class="power_info_more" src="../../images/arrow.svg"></image>
+      <image wx:if="{{power.showItem}}" class="power_info_less" src="../../images/arrow.svg"></image>
+    </view>
+    <view wx:if="{{power.showItem}}">
+      <view wx:key="title" wx:for="{{power.item}}">
+        <view class="line"></view>
+        <view class="power_item" bindtap="jumpPage" data-page="{{item.page}}">
+          <view class="power_item_title">{{item.title}}</view>
+          <image class="power_item_icon" src="../../images/arrow.svg"></image>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- <view class="environment" bindtap="onChangeShowEnvChoose">当前环境 {{ selectedEnv.alias }}</view> -->
+  <view class="environment">山东大学威海 数据科学与人工智能实验班</view>
+
+  <cloud-tip-modal showUploadTipProps="{{showUploadTip}}"></cloud-tip-modal>
+
+</view>
