@@ -1,5 +1,7 @@
 # 项目部署
 
+点云文件占用空间较多，本仓库中不包含点云文件，你可以在[这里](https://pan.baidu.com/s/1EXMqSJxVzMy3WA8i3E1QWg)下载网页中展示的点云（提取码：w121）。
+
 ## 在本地PC上安装
 
 安装 [node.js](http://nodejs.org/)
