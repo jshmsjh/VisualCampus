@@ -2,6 +2,7 @@
 
 <details>
   <summary> Dependencies (click to expand) </summary>
+  
   - flask
   - socket
   - cv2
@@ -13,7 +14,9 @@
   - numpy
   - skimage
   - numba
+  
   - </details>
+  
 #### 使用
 
 1. 在`app.py`中将`IP`及端口替换为自有服务器的IP与端口，注意需要保证端口开放；
