@@ -32,7 +32,7 @@
 
 项目说明中使用了`towxml`显示markdown，整体小程序的工程目录如下所示：
 
-![tree](C:/Users/15740/Desktop/tree.jpg)
+![tree](https://7465-testsduwh030201-icc8o-1301103668.tcb.qcloud.la/VisualCampus/img/tree.jpg?sign=f31a2458a8c1f889a734cbf4385d2490&t=1645186376)
 
 ### 参考
 
